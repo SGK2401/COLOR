@@ -45,11 +45,13 @@ class IMAGE:
 
     def PROCESS(self, mode: str="knc", color_set: str=None, pre_process=None):
         self.PreProcess(pre_process)
-        color_set = ColorSet().colset(color_set)
+        cs = ColorSet()
         if mode == "log":
-            func = models().LOG(color_set, len(color_set))
+            func = models().LOG(cs.colorValue, cs.colorName, self.size[0])
         elif mode == "knc":
-            func = models().KNC(color_set)
+            func = models().KNC(cs.colorValue, cs.colorName)
+        else:
+            raise Exception("No such mode {}.".format(mode))
         colors = {}
         for i in self.processed:
             result = func.predict([[i[0], i[1], i[2]]])[0]
@@ -62,26 +64,29 @@ class IMAGE:
 
 
 class ColorSet:
-    def __init__(self, csvPath="./color_names.csv", colorPath="./Colors.json") -> None:
+    def __init__(self, setName: str=None, csvPath="./color_names.csv", colorPath="./Colors.json") -> None:
         self.rawSet = pd.read_csv(csvPath)
         with open(colorPath) as file:
             self.rawColor = json.load(file)
+        self.colset(setName)
     
-    def colset(self, setName: str=None):
+    def colset(self, setName):
         if setName in self.rawColor:
-            return pd.DataFrame([self.rawSet.loc[self.rawSet[(self.rawSet.Name == i)].index[0]] for i in self.rawColor[setName]])
+            self.rawColorSet = pd.DataFrame([self.rawSet.loc[self.rawSet[(self.rawSet.Name == i)].index[0]] for i in self.rawColor[setName]])
         elif setName == None:
-            return self.rawSet
+            self.rawColorSet = self.rawSet
         else:
             raise Exception("Given set name not found in json file")
+        self.colorName = np.array(self.rawColorSet["Name"])
+        self.colorValue = np.array(self.rawColorSet[["Red", "Green", "Blue"]])
 
 class models:
-    def KNC(self, data: pd.DataFrame):
+    def KNC(self, X, Y):
         knc = KNeighborsClassifier(n_neighbors=1, algorithm="brute")
-        knc.fit(np.array(data[["Red", "Green", "Blue"]]), data["Name"])
+        knc.fit(X, Y)
         return knc
 
-    def LOG(self, data: pd.DataFrame, iter):
-        log = LogisticRegression(solver="liblinear", max_iter=iter)
-        log.fit(np.array(data[["Red", "Green", "Blue"]]), data["Name"])
+    def LOG(self, X, Y, iteration):
+        log = LogisticRegression(solver="liblinear", max_iter=iteration)
+        log.fit(X, Y)
         return log
