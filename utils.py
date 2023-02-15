@@ -24,13 +24,13 @@ class IMAGE:
     def image(self, path: str):
         return cv2.imread(path, cv2.IMREAD_COLOR)
 
-    def PreProcess(self, mode):
-        if mode == "nlm":
-            self._preProcess(cv2.fastNlMeansDenoisingColored(self._img))
-        elif mode == None:
-            self._preProcess(self._img)
+    def PreProcess(self, method):
+        if method == None:
+            self.processed = self._preProcess(self._img)
+        elif callable(method):
+            self.processed = self._preProcess(method(self._img))
         else:
-            raise Exception("""No method as {}. Avaliable methods are "nlm" and None.""".format(mode))
+            raise Exception("""No method as {}. Avaliable methods are "nlm" and None.""".format(method))
     
     def _preProcess(self, object):
         img = {}
@@ -41,9 +41,9 @@ class IMAGE:
                     img[o]+=1
                 else:
                     img[o]=1
-        self.processed = img
+        return img
 
-    def PROCESS(self, mode: str="knc", color_set: str=None, pre_process: str=None):
+    def PROCESS(self, mode: str="knc", color_set: str=None, pre_process=None):
         self.PreProcess(pre_process)
         color_set = ColorSet().colset(color_set)
         if mode == "log":
@@ -67,11 +67,13 @@ class ColorSet:
         with open(colorPath) as file:
             self.rawColor = json.load(file)
     
-    def colset(self, setName: str):
-        if setName != None:
+    def colset(self, setName: str=None):
+        if setName in self.rawColor:
             return pd.DataFrame([self.rawSet.loc[self.rawSet[(self.rawSet.Name == i)].index[0]] for i in self.rawColor[setName]])
-        else:
+        elif setName == None:
             return self.rawSet
+        else:
+            raise Exception("Given set name not found in json file")
 
 class models:
     def KNC(self, data: pd.DataFrame):
