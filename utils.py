@@ -43,9 +43,9 @@ class IMAGE:
                     img[o]=1
         return img
 
-    def PROCESS(self, mode: str="knc", color_set: str=None, pre_process=None):
+    def PROCESS(self, mode: str="knc", Percentage_output=False, color_set: str=None, pre_process=None):
         self.PreProcess(pre_process)
-        cs = ColorSet()
+        cs = ColorSet(color_set)
         if mode == "log":
             func = models().LOG(cs.colorValue, cs.colorName, self.size[0])
         elif mode == "knc":
@@ -59,7 +59,10 @@ class IMAGE:
                 colors[result]+=self.processed[i]
             else:
                 colors[result]=self.processed[i]
-        return colors
+        if Percentage_output:
+            return {i:f"{colors[i]/self.size[0]*100}%" for i in colors}
+        else:
+            return colors
 
 
 
