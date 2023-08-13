@@ -51,7 +51,7 @@ class IMAGE:
         elif mode == "knc":
             func = models().KNC(cs.colorValue, cs.colorName)
         else:
-            raise Exception("No such mode {}.".format(mode))
+            raise Exception("No such mode as {}.".format(mode))
         colors = {}
         for i in self.processed:
             result = func.predict([[i[0], i[1], i[2]]])[0]
